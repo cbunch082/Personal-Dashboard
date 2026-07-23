@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📝 Assignment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBx-Vf9VNiRkYDPGrME6r21orHt43-X7dQ",
+    authDomain: "dashboard-25c32.firebaseapp.com",
+    projectId: "dashboard-25c32",
+    storageBucket: "dashboard-25c32.firebasestorage.app",
+    messagingSenderId: "978724068740",
+    appId: "1:978724068740:web:a7aa6e866358c75b5791d1"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  window.firebaseApp = app; // exposed so later scripts on this page can use it
+
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence }
+    from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc }
+    from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  setPersistence(auth, browserLocalPersistence).catch(()=>{});
+
+  window.fb = {
+    auth, db,
+    onAuthChange: (cb) => onAuthStateChanged(auth, cb),
+    signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
+    signOut: () => signOut(auth),
+    loadDoc: async (path) => {
+      const ref = doc(db, path);
+      const snap = await getDoc(ref);
+      return snap.exists() ? snap.data() : null;
+    },
+    saveDoc: async (path, data) => {
+      await setDoc(doc(db, path), data);
+    }
+  };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+/* ── Default (Gothic) theme ── */
+:root,[data-theme="goth"]{
+  --bg:#07050a;--bg2:#100c14;--bg3:#18121e;--bg4:#22182a;
+  --card:#0f0b16;--accent:#b5294a;--accent2:#8c1a34;--accent3:#d4547a;
+  --glow:rgba(181,41,74,0.35);--glow2:rgba(181,41,74,0.12);
+  --green:#52b788;--amber:#f4a261;--red:#ef4444;--purple:#9d4edd;--blue:#38bdf8;
+  --text:#ede0f0;--text-s:#b09ac0;--text-xs:#6e5a80;
+  --border:rgba(181,41,74,0.2);--border2:rgba(181,41,74,0.4);
+  --shadow:0 2px 20px rgba(0,0,0,0.5),0 0 0 1px rgba(181,41,74,0.08);
+  --font-body:'Crimson Pro',Georgia,serif;--font-head:'Cinzel',serif;--font-mono:'Space Mono',monospace;
+}
+[data-theme="kawaii"]{--bg:#fff0f8;--bg2:#ffe0f0;--bg3:#ffd0e8;--bg4:#ffbfe0;--card:#fff8fc;--accent:#e91e8c;--accent2:#c0156e;--accent3:#ff6bb5;--glow:rgba(233,30,140,0.25);--glow2:rgba(233,30,140,0.1);--green:#43a047;--amber:#ffb300;--red:#e53935;--purple:#9c27b0;--blue:#26c6da;--text:#3a0a2e;--text-s:#8a3a6a;--text-xs:#c070a0;--border:rgba(233,30,140,0.18);--border2:rgba(233,30,140,0.38);--shadow:0 2px 16px rgba(233,30,140,0.12);}
+[data-theme="halloween"]{--bg:#08050a;--bg2:#130a00;--bg3:#1e1200;--bg4:#2a1a00;--card:#100800;--accent:#f97316;--accent2:#ea580c;--accent3:#fb923c;--glow:rgba(249,115,22,0.35);--glow2:rgba(249,115,22,0.12);--green:#86efac;--amber:#fbbf24;--red:#ef4444;--purple:#a855f7;--blue:#2dd4bf;--text:#fde8c0;--text-s:#c4935a;--text-xs:#8a6030;--border:rgba(249,115,22,0.2);--border2:rgba(249,115,22,0.4);--shadow:0 2px 20px rgba(0,0,0,0.6);}
+[data-theme="christmas"]{--bg:#fafff8;--bg2:#edfaee;--bg3:#d8f0d8;--bg4:#c2e6c2;--card:#ffffff;--accent:#c0392b;--accent2:#922b21;--accent3:#e74c3c;--glow:rgba(192,57,43,0.22);--glow2:rgba(192,57,43,0.09);--green:#2e7d32;--amber:#ff8f00;--red:#c62828;--purple:#673ab7;--blue:#0288d1;--text:#1a3a1a;--text-s:#3a6a3a;--text-xs:#6a9a6a;--border:rgba(192,57,43,0.15);--border2:rgba(192,57,43,0.32);--shadow:0 2px 16px rgba(192,57,43,0.1);}
+[data-theme="fall"]{--bg:#fdf8f2;--bg2:#faf0e0;--bg3:#f5e4c8;--bg4:#edd8b0;--card:#ffffff;--accent:#b45309;--accent2:#8a3d04;--accent3:#d97706;--glow:rgba(180,83,9,0.22);--glow2:rgba(180,83,9,0.09);--green:#15803d;--amber:#b45309;--red:#dc2626;--purple:#7c3aed;--blue:#0369a1;--text:#2a1800;--text-s:#78450a;--text-xs:#a0683a;--border:rgba(180,83,9,0.16);--border2:rgba(180,83,9,0.34);--shadow:0 2px 16px rgba(180,83,9,0.1);}
+[data-theme="lavender"]{--bg:#faf5ff;--bg2:#f3e8ff;--bg3:#ede9ff;--bg4:#ddd6fe;--card:#fefcff;--accent:#7c3aed;--accent2:#5b21b6;--accent3:#a78bfa;--glow:rgba(124,58,237,0.22);--glow2:rgba(124,58,237,0.09);--green:#059669;--amber:#d97706;--red:#dc2626;--purple:#7c3aed;--blue:#0891b2;--text:#2e1065;--text-s:#5b21b6;--text-xs:#7c3aed;--border:rgba(124,58,237,0.15);--border2:rgba(124,58,237,0.3);--shadow:0 2px 16px rgba(124,58,237,0.1);}
+[data-theme="darkacademia"]{--bg:#1a1610;--bg2:#221e12;--bg3:#2e2818;--bg4:#3a321e;--card:#201c12;--accent:#c9a84c;--accent2:#a07c2a;--accent3:#e8c96a;--glow:rgba(201,168,76,0.32);--glow2:rgba(201,168,76,0.12);--green:#5a7a3a;--amber:#c9a84c;--red:#c0392b;--purple:#8b7355;--blue:#4a7a6a;--text:#f0e8d0;--text-s:#c4b080;--text-xs:#8a7850;--border:rgba(201,168,76,0.18);--border2:rgba(201,168,76,0.38);--shadow:0 2px 20px rgba(0,0,0,0.6);}
+[data-theme="cottagecore"]{--bg:#f5f0e8;--bg2:#ede4d4;--bg3:#e0d4bc;--bg4:#d4c4a8;--card:#fdfaf4;--accent:#7a9a5a;--accent2:#5a7a3a;--accent3:#9ab87a;--glow:rgba(122,154,90,0.22);--glow2:rgba(122,154,90,0.09);--green:#7a9a5a;--amber:#c4a85a;--red:#c0392b;--purple:#8a6a9a;--blue:#5a8a7a;--text:#2a2010;--text-s:#5a4a30;--text-xs:#8a7a5a;--border:rgba(122,154,90,0.18);--border2:rgba(122,154,90,0.35);--shadow:0 2px 16px rgba(122,154,90,0.1);}
+[data-theme="ocean"]{--bg:#040f1a;--bg2:#081828;--bg3:#0c2038;--bg4:#102848;--card:#060f1e;--accent:#0ea5e9;--accent2:#0284c7;--accent3:#38bdf8;--glow:rgba(14,165,233,0.35);--glow2:rgba(14,165,233,0.12);--green:#34d399;--amber:#fbbf24;--red:#ef4444;--purple:#818cf8;--blue:#0ea5e9;--text:#e0f4ff;--text-s:#7ab8d8;--text-xs:#407888;--border:rgba(14,165,233,0.18);--border2:rgba(14,165,233,0.38);--shadow:0 2px 20px rgba(0,0,0,0.7);}
+[data-theme="cyberpunk"]{--bg:#0a0a0f;--bg2:#0f0f18;--bg3:#14142a;--bg4:#1a1a38;--card:#0c0c1a;--accent:#00f5ff;--accent2:#00b8cc;--accent3:#80faff;--glow:rgba(0,245,255,0.35);--glow2:rgba(0,245,255,0.12);--green:#00ff88;--amber:#ffcc00;--red:#ff0044;--purple:#bf00ff;--blue:#00f5ff;--text:#e0f8ff;--text-s:#80c8d8;--text-xs:#408898;--border:rgba(0,245,255,0.18);--border2:rgba(0,245,255,0.38);--shadow:0 2px 20px rgba(0,0,0,0.8);}
+[data-theme="midnight"]{--bg:#080810;--bg2:#0c0c18;--bg3:#101020;--bg4:#141428;--card:#0a0a16;--accent:#6366f1;--accent2:#4f46e5;--accent3:#818cf8;--glow:rgba(99,102,241,0.35);--glow2:rgba(99,102,241,0.12);--green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#6366f1;--blue:#06b6d4;--text:#e8e8ff;--text-s:#9898c8;--text-xs:#585878;--border:rgba(99,102,241,0.18);--border2:rgba(99,102,241,0.36);--shadow:0 2px 20px rgba(0,0,0,0.8);}
+[data-theme="pastelegoth"]{--bg:#1a1020;--bg2:#221430;--bg3:#2e1a40;--bg4:#3a2050;--card:#1e1228;--accent:#d4a0f0;--accent2:#a870c0;--accent3:#e8c0ff;--glow:rgba(212,160,240,0.32);--glow2:rgba(212,160,240,0.12);--green:#a0e0c0;--amber:#f0d0a0;--red:#f07080;--purple:#c080f0;--blue:#a0d0e8;--text:#f0e8ff;--text-s:#c8a8e0;--text-xs:#907098;--border:rgba(212,160,240,0.18);--border2:rgba(212,160,240,0.36);--shadow:0 2px 20px rgba(0,0,0,0.6);}
+
+/* ── Base ── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:var(--font-body);font-size:1rem;color:var(--text);background:var(--bg);min-height:100vh;line-height:1.6;transition:background .3s,color .3s;}
+.app{max-width:1100px;margin:0 auto;padding:0 0 4rem;}
+
+/* ── Header ── */
+.header{
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  padding:1.25rem 1.5rem;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:1rem;
+}
+.header h1{font-family:var(--font-head);font-size:1.5rem;color:white;letter-spacing:.08em;margin-bottom:8px;}
+.theme-dots{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.tdot{width:18px;height:18px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s;}
+.tdot:hover,.tdot.active{transform:scale(1.3);border-color:white;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+
+/* ── Stats bar ── */
+.stats-bar{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:10px;padding:1.25rem 1.5rem;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;}
+.stat-num{font-family:var(--font-mono);font-size:1.6rem;color:var(--accent);text-shadow:0 0 10px var(--glow);}
+.stat-lbl{font-size:.68rem;color:var(--text-xs);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-mono);margin-top:2px;}
+
+/* ── Content ── */
+.content{padding:1.5rem;}
+
+/* ── Cards ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:1.25rem 1.5rem;
+  box-shadow:var(--shadow);margin-bottom:1.25rem;position:relative;
+}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5;pointer-events:none;}
+.card-title{font-family:var(--font-head);font-size:.8rem;color:var(--accent3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+
+/* ── Inputs ── */
+.field-label{font-size:.72rem;color:var(--text-xs);display:block;margin-bottom:4px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;
+  color:var(--text);font-family:var(--font-body);font-size:.95rem;
+  padding:7px 11px;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow2);}
+input::placeholder{color:var(--text-xs);font-style:italic;}
+select{cursor:pointer;}
+.form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.form-row input,.form-row select{flex:1;min-width:100px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px;}
+.form-field{display:flex;flex-direction:column;gap:3px;}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text-s);font-size:.9rem;cursor:pointer;font-family:var(--font-body);transition:all .15s;white-space:nowrap;}
+.btn:hover{color:var(--accent);border-color:var(--accent);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 10px var(--glow);}
+.btn-primary:hover{opacity:.88;color:#fff;}
+.btn-sm{padding:5px 10px;font-size:.82rem;}
+.btn-ghost{background:none;border:1px dashed var(--border2);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.del-x{background:none;border:none;color:var(--text-xs);cursor:pointer;font-size:.95rem;padding:3px 6px;opacity:0;transition:opacity .15s;line-height:1;}
+.hoverable:hover .del-x{opacity:.55;}
+.del-x:hover{opacity:1!important;color:var(--accent);}
+
+/* ── Class cards ── */
+.class-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem;overflow:hidden;box-shadow:var(--shadow);}
+.class-card::before{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5;}
+.class-head{padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;cursor:pointer;transition:background .15s;}
+.class-head:hover{background:var(--bg2);}
+.class-name{font-family:var(--font-head);font-size:1.1rem;color:var(--text);letter-spacing:.04em;}
+.class-meta{font-size:.82rem;color:var(--text-s);font-style:italic;margin-top:3px;}
+.class-grade-badge{font-family:var(--font-mono);font-size:.88rem;padding:4px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);}
+.class-body{display:none;border-top:1px solid var(--border);}
+.class-body.open{display:block;}
+.class-expand{background:none;border:none;color:var(--text-xs);font-size:.9rem;padding:4px 8px;cursor:pointer;transition:transform .2s;}
+.class-expand.open{transform:rotate(180deg);}
+
+/* ── Grade progress ── */
+.grade-section{padding:1rem 1.25rem;border-bottom:1px solid var(--border);background:var(--bg2);}
+.grade-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.grade-big{font-family:var(--font-mono);font-size:2.5rem;color:var(--accent);text-shadow:0 0 16px var(--glow);line-height:1;}
+.grade-details{flex:1;min-width:160px;}
+.grade-bar-wrap{background:var(--bg4);border-radius:20px;height:8px;overflow:hidden;margin:6px 0;}
+.grade-bar{height:100%;border-radius:20px;transition:width .4s;}
+.grade-sub{font-size:.78rem;color:var(--text-s);font-style:italic;}
+.whatif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.whatif-box{background:var(--bg3);border-radius:9px;padding:8px 10px;text-align:center;}
+.whatif-num{font-family:var(--font-mono);font-size:.95rem;color:var(--text);}
+.whatif-lbl{font-size:.65rem;color:var(--text-xs);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono);margin-top:2px;}
+
+/* ── Countdown strip ── */
+.countdown-strip{padding:.75rem 1.25rem;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg2);}
+.cd-chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:.82rem;}
+.cd-chip-days{font-family:var(--font-mono);font-size:.95rem;color:var(--accent);text-shadow:0 0 8px var(--glow);font-weight:700;}
+.cd-chip.overdue{border-color:var(--red);background:rgba(239,68,68,.08);}
+.cd-chip.due-soon{border-color:var(--amber);}
+.cd-chip.upcoming{border-color:var(--border2);}
+.cd-chip-del{background:none;border:none;color:var(--text-xs);cursor:pointer;font-size:.8rem;padding:0 2px;opacity:0;}
+.cd-chip:hover .cd-chip-del{opacity:.6;}
+.add-cd-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.add-cd-row input{flex:1;min-width:100px;}
+
+/* ── Assignment table ── */
+.assignments-section{padding:1rem 1.25rem;}
+.asgn-col-heads{display:grid;grid-template-columns:1fr 110px 90px 80px 80px 32px;gap:8px;padding:4px 10px;margin-bottom:4px;}
+.asgn-col-h{font-size:.65rem;color:var(--text-xs);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em;}
+.asgn-row{display:grid;grid-template-columns:1fr 110px 90px 80px 80px 32px;gap:8px;align-items:center;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;margin-bottom:5px;transition:border-color .15s;}
+.asgn-row:hover{border-color:var(--border2);}
+.asgn-row.done-row{opacity:.5;}
+.asgn-row.overdue-row{border-left:3px solid var(--red);}
+.asgn-row.soon-row{border-left:3px solid var(--amber);}
+.asgn-name-cell{display:flex;align-items:center;gap:8px;min-width:0;}
+.asgn-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;transition:all .15s;}
+.asgn-check.done{background:var(--green);border-color:var(--green);color:#fff;}
+.asgn-text{flex:1;background:none;border:none;color:var(--text);font-family:var(--font-body);font-size:.95rem;outline:none;min-width:0;}
+.asgn-text.done-txt{text-decoration:line-through;color:var(--text-xs);}
+.asgn-due{font-family:var(--font-mono);font-size:.75rem;text-align:center;}
+.asgn-due.overdue{color:var(--red);}
+.asgn-due.due-soon{color:var(--amber);}
+.asgn-due.ok{color:var(--text-s);}
+.asgn-type-badge{font-size:.68rem;padding:2px 8px;border-radius:8px;text-align:center;font-family:var(--font-mono);white-space:nowrap;}
+.tb-exam{background:rgba(181,41,74,.2);color:var(--accent3);}
+.tb-quiz{background:rgba(157,78,237,.2);color:var(--purple);}
+.tb-hw{background:rgba(244,162,97,.2);color:var(--amber);}
+.tb-project{background:rgba(56,189,248,.2);color:var(--blue);}
+.tb-lab{background:rgba(82,183,136,.2);color:var(--green);}
+.tb-other{background:rgba(110,90,128,.2);color:var(--text-s);}
+.asgn-weight-cell{font-family:var(--font-mono);font-size:.8rem;color:var(--text-s);text-align:center;}
+.grade-input{
+  width:100%;text-align:center;font-family:var(--font-mono);font-size:.88rem;
+  padding:4px 6px;border-radius:7px;background:var(--bg4);border:1px solid var(--border);
+  color:var(--text);outline:none;transition:border-color .15s;
+}
+.grade-input:focus{border-color:var(--accent);}
+.done-section-label{font-size:.68rem;color:var(--text-xs);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 5px;margin-top:4px;border-top:1px dashed var(--border);}
+.add-asgn-form{background:var(--bg2);border-top:1px solid var(--border);padding:.75rem 1.25rem;}
+.add-asgn-label{font-size:.72rem;color:var(--text-xs);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.empty-msg{text-align:center;color:var(--text-xs);font-style:italic;font-size:.9rem;padding:1rem 0;}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
+
+/* ── Mobile ── */
+@media(max-width:680px){
+  .asgn-col-heads{grid-template-columns:1fr 90px 80px 32px;}
+  .asgn-row{grid-template-columns:1fr 90px 80px 32px;}
+  .asgn-weight-cell,.grade-input{display:none;}
+  .asgn-col-h:nth-child(4),.asgn-col-h:nth-child(5){display:none;}
+  .whatif-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body data-theme="goth">
+
+<!-- LOGIN GATE -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2.2rem 2.2rem;max-width:340px;width:90%;box-shadow:var(--shadow);text-align:center;">
+    <div style="font-family:var(--font-head);font-size:1.4rem;color:var(--accent3);margin-bottom:.3rem;">📝 Assignment Tracker</div>
+    <div style="color:var(--text-s);font-size:.85rem;margin-bottom:1.4rem;">sign in to unlock your tracker</div>
+    <input id="login-email" type="email" placeholder="email" autocomplete="username"
+      style="width:100%;padding:10px 12px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.9rem;">
+    <input id="login-password" type="password" placeholder="password" autocomplete="current-password"
+      style="width:100%;padding:10px 12px;margin-bottom:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.9rem;">
+    <button id="login-btn" class="btn btn-primary" style="width:100%;" onclick="doLogin()">Enter</button>
+    <div id="login-error" style="color:var(--accent3);font-size:.78rem;margin-top:10px;min-height:1em;"></div>
+  </div>
+</div>
+
+<div class="app" id="app-layout" style="display:none;">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <h1>📝 Assignment Tracker</h1>
+      <div class="theme-dots" aria-label="Theme selector">
+        <button class="tdot active" data-t="goth"       style="background:linear-gradient(135deg,#b5294a,#9d4edd)" title="Gothic"       onclick="setTheme('goth')"></button>
+        <button class="tdot"        data-t="kawaii"      style="background:linear-gradient(135deg,#e91e8c,#9c27b0)" title="Kawaii"       onclick="setTheme('kawaii')"></button>
+        <button class="tdot"        data-t="halloween"   style="background:linear-gradient(135deg,#f97316,#7c2d92)" title="Halloween"     onclick="setTheme('halloween')"></button>
+        <button class="tdot"        data-t="christmas"   style="background:linear-gradient(135deg,#c0392b,#2e7d32)" title="Christmas"     onclick="setTheme('christmas')"></button>
+        <button class="tdot"        data-t="fall"        style="background:linear-gradient(135deg,#b45309,#c0392b)" title="Fall"         onclick="setTheme('fall')"></button>
+        <button class="tdot"        data-t="lavender"    style="background:linear-gradient(135deg,#7c3aed,#db2777)" title="Lavender"     onclick="setTheme('lavender')"></button>
+        <button class="tdot"        data-t="darkacademia"style="background:linear-gradient(135deg,#c9a84c,#5a3a1a)" title="Dark Academia"onclick="setTheme('darkacademia')"></button>
+        <button class="tdot"        data-t="cottagecore" style="background:linear-gradient(135deg,#7a9a5a,#c4a85a)" title="Cottage Core" onclick="setTheme('cottagecore')"></button>
+        <button class="tdot"        data-t="ocean"       style="background:linear-gradient(135deg,#0ea5e9,#2dd4bf)" title="Ocean"        onclick="setTheme('ocean')"></button>
+        <button class="tdot"        data-t="cyberpunk"   style="background:linear-gradient(135deg,#00f5ff,#ff0080)" title="Cyberpunk"    onclick="setTheme('cyberpunk')"></button>
+        <button class="tdot"        data-t="midnight"    style="background:linear-gradient(135deg,#6366f1,#ec4899)" title="Midnight"     onclick="setTheme('midnight')"></button>
+        <button class="tdot"        data-t="pastelegoth" style="background:linear-gradient(135deg,#d4a0f0,#f0a0c8)" title="Pastel Goth"  onclick="setTheme('pastelegoth')"></button>
+      </div>
+    </div>
+    <button class="btn" onclick="doLogout()" style="align-self:flex-start;">🚪 Log out</button>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="stats-bar"></div>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+
+    <!-- Add class form -->
+    <div class="card">
+      <div class="card-title">📖 Add a new class</div>
+      <div class="form-grid">
+        <div class="form-field"><label class="field-label">Class name</label><input type="text" id="cls-name" placeholder="e.g. Biochemistry 401" aria-label="Class name"></div>
+        <div class="form-field"><label class="field-label">Professor</label><input type="text" id="cls-prof" placeholder="e.g. Dr. Smith" aria-label="Professor"></div>
+        <div class="form-field"><label class="field-label">Semester</label><input type="text" id="cls-sem" placeholder="e.g. Fall 2026" aria-label="Semester"></div>
+        <div class="form-field"><label class="field-label">Target grade (%)</label><input type="number" id="cls-target" value="90" min="0" max="100" aria-label="Target grade"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addClass()">+ Add class</button>
+    </div>
+
+    <!-- Classes rendered here -->
+    <div id="classes-container"></div>
+
+  </div>
+</div>
+
+<script>
+/* ── Constants ── */
+const SK = 'asgn_v2';
+const THEME_SK = 'asgn_theme_v2';
+const TODAY = (() => { const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })();
+
+/* ── State ── */
+const DEFAULT = {
+  classes: [],
+  nextClassId: 1,
+  nextAsgnId: 1,
+  nextCdId: 1,
+};
+let S = JSON.parse(JSON.stringify(DEFAULT));
+
+/* ── Storage ── */
+function load() { try { const r=localStorage.getItem(SK); if(r) S=Object.assign({},DEFAULT,JSON.parse(r)); } catch(e){} }
+function save() {
+  try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e){}
+  if (window.fb && window.fb.auth.currentUser) {
+    window.fb.saveDoc('users/' + window.fb.auth.currentUser.uid + '/data/assignments', S)
+      .catch(e => console.warn('Cloud save failed:', e));
+  }
+}
+
+async function syncFromCloud() {
+  if (!(window.fb && window.fb.auth.currentUser)) return;
+  const path = 'users/' + window.fb.auth.currentUser.uid + '/data/assignments';
+  try {
+    const cloudData = await window.fb.loadDoc(path);
+    if (cloudData) {
+      S = Object.assign({}, DEFAULT, cloudData);
+      try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e) {}
+    } else {
+      await window.fb.saveDoc(path, S);
+    }
+  } catch(e) { console.warn('Cloud sync failed:', e); }
+}
+
+function whenFirebaseReady(cb) {
+  if (window.fb) cb(); else window.addEventListener('firebase-ready', cb, {once:true});
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'enter both email and password'; return; }
+  window.fb.signIn(email, password).catch(e => {
+    errEl.textContent = 'login failed — check your email and password';
+    console.warn(e);
+  });
+}
+
+function doLogout() {
+  if (window.fb) window.fb.signOut();
+}
+
+/* ── Theme ── */
+function setTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  document.querySelectorAll('.tdot').forEach(b => { if(b&&b.dataset) b.classList.toggle('active', b.dataset.t===t); });
+  try { localStorage.setItem(THEME_SK, t); } catch(e) {}
+}
+
+/* ── Utility ── */
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function daysUntil(ds) {
+  if (!ds) return null;
+  const p = ds.split('-');
+  const t = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+  t.setHours(0,0,0,0);
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((t-n)/86400000);
+}
+
+function dueDateClass(ds, done) {
+  if (done||!ds) return 'ok';
+  const d = daysUntil(ds);
+  if (d < 0) return 'overdue';
+  if (d <= 3) return 'due-soon';
+  return 'ok';
+}
+
+function dueDateLabel(ds, done) {
+  if (!ds) return '—';
+  if (done) return ds;
+  const d = daysUntil(ds);
+  if (d < 0) return Math.abs(d)+'d overdue';
+  if (d === 0) return 'Today!';
+  if (d === 1) return 'Tomorrow';
+  if (d <= 7) return d+'d left';
+  return ds;
+}
+
+function typeBadgeClass(type) {
+  return {exam:'tb-exam',quiz:'tb-quiz',hw:'tb-hw',project:'tb-project',lab:'tb-lab',other:'tb-other'}[type]||'tb-other';
+}
+
+function calcGrade(cls) {
+  const asgns = cls.assignments||[];
+  const graded = asgns.filter(a => a.grade!==''&&a.grade!==null&&!isNaN(parseFloat(a.grade)));
+  if (!graded.length) return null;
+  const cw = cls.catWeights;
+  // If category weights are set and total ~100%, use weighted category average
+  if (cw) {
+    const total = Object.values(cw).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    if (Math.abs(total-100) < 2) {
+      // Group by type, average within each type, then weight by category
+      const types = ['exam','quiz','hw','project','lab','other'];
+      let weightedSum = 0, weightUsed = 0;
+      types.forEach(type => {
+        const typeGraded = graded.filter(a=>a.type===type);
+        if (!typeGraded.length) return;
+        const typeAvg = typeGraded.reduce((s,a)=>s+parseFloat(a.grade),0) / typeGraded.length;
+        const catW = parseFloat(cw[type])||0;
+        weightedSum += typeAvg * catW;
+        weightUsed += catW;
+      });
+      return weightUsed > 0 ? weightedSum / weightUsed : null;
+    }
+  }
+  // Fallback: simple average by points possible
+  const tw = graded.reduce((s,a)=>s+(parseFloat(a.weight)||100),0);
+  const ws = graded.reduce((s,a)=>s+(parseFloat(a.grade)*(parseFloat(a.weight)||100)),0);
+  return tw>0 ? ws/tw : null;
+}
+
+function letterGrade(pct) {
+  if (pct>=97) return 'A+'; if (pct>=93) return 'A'; if (pct>=90) return 'A−';
+  if (pct>=87) return 'B+'; if (pct>=83) return 'B'; if (pct>=80) return 'B−';
+  if (pct>=77) return 'C+'; if (pct>=73) return 'C'; if (pct>=70) return 'C−';
+  if (pct>=60) return 'D'; return 'F';
+}
+
+function gradeColor(pct) {
+  if (pct>=90) return 'var(--green)';
+  if (pct>=80) return 'var(--blue)';
+  if (pct>=70) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+/* ── Classes ── */
+function addClass() {
+  const name = document.getElementById('cls-name').value.trim(); if (!name) return;
+  S.classes.push({
+    id: S.nextClassId++, name,
+    prof:   document.getElementById('cls-prof').value.trim(),
+    sem:    document.getElementById('cls-sem').value.trim(),
+    target: parseFloat(document.getElementById('cls-target').value)||90,
+    assignments: [],
+    countdowns: [],
+    open: true,
+    catWeights: { exam:40, quiz:15, hw:25, project:15, lab:5, other:0 },
+  });
+  ['cls-name','cls-prof','cls-sem'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  save(); render();
+}
+
+function deleteClass(id) {
+  if (!confirm('Delete this class and all its data?')) return;
+  S.classes = S.classes.filter(c=>c.id!==id);
+  save(); render();
+}
+
+function toggleClass(id) {
+  const cls = S.classes.find(c=>c.id===id); if (!cls) return;
+  cls.open = !cls.open;
+  save();
+  const body = document.getElementById('cb-'+id);
+  const btn  = document.getElementById('cx-'+id);
+  if (body) body.classList.toggle('open', cls.open);
+  if (btn)  btn.classList.toggle('open', cls.open);
+}
+
+/* ── Assignments ── */
+function addAssignment(cid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const nameEl = document.getElementById('an-'+cid); if (!nameEl||!nameEl.value.trim()) return;
+  cls.assignments.push({
+    id:     S.nextAsgnId++,
+    name:   nameEl.value.trim(),
+    type:   (document.getElementById('at-'+cid)||{}).value||'hw',
+    due:    (document.getElementById('ad-'+cid)||{}).value||'',
+    weight: parseFloat((document.getElementById('aw-'+cid)||{}).value)||1,
+    grade:  '',
+    done:   false,
+  });
+  nameEl.value = '';
+  const di = document.getElementById('ad-'+cid); if (di) di.value='';
+  save(); renderClass(cid);
+}
+
+function toggleAssignment(cid, aid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const a = (cls.assignments||[]).find(a=>a.id===aid); if (!a) return;
+  a.done = !a.done;
+  save(); renderClass(cid); renderStats();
+}
+
+function updateAsgnName(cid, aid, val) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const a = (cls.assignments||[]).find(a=>a.id===aid); if (a) a.name=val;
+  save();
+}
+
+function updateGrade(cid, aid, val) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const a = (cls.assignments||[]).find(a=>a.id===aid); if (!a) return;
+  a.grade = val==='' ? '' : parseFloat(val);
+  save(); renderClassGrade(cid);
+}
+
+function deleteAssignment(cid, aid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  cls.assignments = (cls.assignments||[]).filter(a=>a.id!==aid);
+  save(); renderClass(cid); renderStats();
+}
+
+/* ── Countdowns per class ── */
+function addClassCountdown(cid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const nameEl = document.getElementById('cdn-'+cid);
+  const dateEl = document.getElementById('cdd-'+cid);
+  if (!nameEl||!nameEl.value.trim()||!dateEl||!dateEl.value) return;
+  if (!cls.countdowns) cls.countdowns = [];
+  cls.countdowns.push({ id:S.nextCdId++, name:nameEl.value.trim(), date:dateEl.value });
+  nameEl.value=''; dateEl.value='';
+  save(); renderClassCountdowns(cid);
+}
+
+function deleteClassCountdown(cid, cdid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  cls.countdowns = (cls.countdowns||[]).filter(cd=>cd.id!==cdid);
+  save(); renderClassCountdowns(cid);
+}
+
+/* ── Render helpers ── */
+
+function renderCategoryWeights(cid) {
+  const el = document.getElementById('catw-'+cid); if (!el) return;
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  if (!cls.catWeights) cls.catWeights = { exam:40, quiz:15, hw:25, project:15, lab:5, other:0 };
+  const cats = [
+    {key:'exam',   label:'Exams',    emoji:'📝'},
+    {key:'quiz',   label:'Quizzes',  emoji:'❓'},
+    {key:'hw',     label:'Homework', emoji:'📋'},
+    {key:'project',label:'Projects', emoji:'💡'},
+    {key:'lab',    label:'Labs',     emoji:'🔬'},
+    {key:'other',  label:'Other',    emoji:'📌'},
+  ];
+  el.innerHTML = cats.map(cat => `
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:6px 8px;min-width:70px;">
+      <span style="font-size:.75rem;color:var(--text-s);">${cat.emoji} ${cat.label}</span>
+      <div style="display:flex;align-items:center;gap:3px;">
+        <input type="number" value="${cls.catWeights[cat.key]||0}" min="0" max="100" step="5"
+          style="width:48px;text-align:center;font-family:var(--font-mono);font-size:.85rem;padding:3px 5px;"
+          onchange="updateCatWeight(${cid},'${cat.key}',this.value)"
+          aria-label="${cat.label} weight">
+        <span style="font-size:.72rem;color:var(--text-xs);">%</span>
+      </div>
+    </div>`).join('');
+  // Show total
+  const total = Object.values(cls.catWeights).reduce((s,v)=>s+(parseFloat(v)||0),0);
+  const color = Math.abs(total-100)<1 ? 'var(--green)' : 'var(--amber)';
+  el.insertAdjacentHTML('beforeend',
+    `<div style="display:flex;align-items:center;font-family:var(--font-mono);font-size:.82rem;color:${color};padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;">
+      Total:<br><strong>${total}%</strong>
+    </div>`);
+}
+
+function updateCatWeight(cid, cat, val) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  if (!cls.catWeights) cls.catWeights = {};
+  cls.catWeights[cat] = parseFloat(val)||0;
+  save();
+  renderCategoryWeights(cid);
+  renderClassGrade(cid);
+}
+
+function renderClassGrade(cid) {
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const g = calcGrade(cls);
+  const gl = document.getElementById('gl-'+cid);
+  const gbar = document.getElementById('gbar-'+cid);
+  const gbadge = document.getElementById('gbadge-'+cid);
+  if (gl) gl.textContent = g!==null ? letterGrade(g)+' ('+g.toFixed(1)+'%)' : 'No grades yet';
+  if (gbar&&g!==null) { gbar.style.width=Math.min(100,g)+'%'; gbar.style.background=gradeColor(g); }
+  if (gbadge) { gbadge.textContent=g!==null?letterGrade(g):'?'; gbadge.style.color=g!==null?gradeColor(g):'var(--text-xs)'; }
+  // What-if
+  const asgns = cls.assignments||[];
+  const ungraded = asgns.filter(a=>!a.done&&(a.grade===''||a.grade===null||isNaN(parseFloat(a.grade))));
+  const graded = asgns.filter(a=>a.grade!==''&&!isNaN(parseFloat(a.grade)));
+  const totalW = asgns.reduce((s,a)=>s+(parseFloat(a.weight)||1),0);
+  const earnedW = graded.reduce((s,a)=>s+(parseFloat(a.weight)||1),0);
+  const earned = graded.reduce((s,a)=>s+(parseFloat(a.grade)*(parseFloat(a.weight)||1)),0);
+  const remW = Math.max(ungraded.reduce((s,a)=>s+(parseFloat(a.weight)||1),0),0.01);
+  const needed = totalW>0 ? ((cls.target*totalW)-earned)/remW : null;
+  const wi1 = document.getElementById('wi1-'+cid); if (wi1) wi1.textContent=ungraded.length+' ungraded';
+  const wi2 = document.getElementById('wi2-'+cid); if (wi2) wi2.textContent=needed!==null?(needed>100?'Not possible':needed<0?'Already there!':needed.toFixed(1)+'%'):'—';
+  const wi3 = document.getElementById('wi3-'+cid); if (wi3) wi3.textContent=g!==null?((g>=cls.target?'✓ On track':'Need '+((cls.target-g).toFixed(1))+'% more')):'—';
+}
+
+function renderClassCountdowns(cid) {
+  const el = document.getElementById('cdstrip-'+cid); if (!el) return;
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const cds = cls.countdowns||[];
+  if (!cds.length) {
+    el.innerHTML = '<span style="font-size:.82rem;color:var(--text-xs);font-style:italic;">no countdowns — add one below</span>';
+    return;
+  }
+  el.innerHTML = cds.map(cd=>{
+    const d = daysUntil(cd.date);
+    const cls2 = d<0?'overdue':d<=3?'due-soon':'upcoming';
+    const label = d<0?Math.abs(d)+'d ago':d===0?'Today!':d+'d';
+    return `<span class="cd-chip ${cls2}">
+      <span>${esc(cd.name)}</span>
+      <span class="cd-chip-days">${label}</span>
+      <button class="cd-chip-del" onclick="deleteClassCountdown(${cid},${cd.id})" aria-label="Delete">×</button>
+    </span>`;
+  }).join('');
+}
+
+function renderClassAssignments(cid) {
+  const el = document.getElementById('asgn-list-'+cid); if (!el) return;
+  const cls = S.classes.find(c=>c.id===cid); if (!cls) return;
+  const asgns = cls.assignments||[];
+  if (!asgns.length) { el.innerHTML='<div class="empty-msg">no assignments yet — add one below</div>'; return; }
+  // Sort: undone by due date first, then done
+  const undone = [...asgns.filter(a=>!a.done)].sort((a,b)=>{
+    if (a.due&&b.due) return new Date(a.due)-new Date(b.due);
+    if (a.due) return -1; if (b.due) return 1; return 0;
+  });
+  const done = asgns.filter(a=>a.done);
+
+  const rowHTML = (list) => list.map(a=>{
+    const dc = dueDateClass(a.due, a.done);
+    const gc = a.grade!==''&&a.grade!==null&&!isNaN(parseFloat(a.grade)) ? gradeColor(parseFloat(a.grade)) : '';
+    const rowCls = a.done?'done-row':dc==='overdue'?'overdue-row':dc==='due-soon'?'soon-row':'';
+    return `<div class="asgn-row ${rowCls} hoverable">
+      <div class="asgn-name-cell">
+        <div class="asgn-check ${a.done?'done':''}" onclick="toggleAssignment(${cid},${a.id})" role="checkbox" aria-checked="${a.done}" tabindex="0">${a.done?'✓':''}</div>
+        <input class="asgn-text ${a.done?'done-txt':''}" value="${esc(a.name)}" onchange="updateAsgnName(${cid},${a.id},this.value)" aria-label="Assignment name">
+      </div>
+      <div class="asgn-due ${dc}">${dueDateLabel(a.due,a.done)}</div>
+      <div><span class="asgn-type-badge ${typeBadgeClass(a.type)}">${a.type}</span></div>
+      <div class="asgn-weight-cell">${a.weight}pts</div>
+      <div><input type="number" class="grade-input" value="${a.grade!==''&&a.grade!==null?a.grade:''}" min="0" max="100" placeholder="—" style="${gc?'border-color:'+gc+';color:'+gc+';':''}" onchange="updateGrade(${cid},${a.id},this.value)" aria-label="Grade %"></div>
+      <button class="del-x" onclick="deleteAssignment(${cid},${a.id})" aria-label="Delete">×</button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="asgn-col-heads">
+      <div class="asgn-col-h">Assignment</div>
+      <div class="asgn-col-h">Due</div>
+      <div class="asgn-col-h">Type</div>
+      <div class="asgn-col-h">Points</div>
+      <div class="asgn-col-h">Score %</div>
+      <div></div>
+    </div>
+    ${rowHTML(undone)}
+    ${done.length?`<div class="done-section-label">Completed (${done.length})</div>${rowHTML(done)}`:''}`;
+}
+
+function renderClass(cid) {
+  renderClassGrade(cid);
+  renderCategoryWeights(cid);
+  renderClassCountdowns(cid);
+  renderClassAssignments(cid);
+}
+
+/* ── Full render ── */
+function render() {
+  renderStats();
+  const el = document.getElementById('classes-container'); if (!el) return;
+  if (!S.classes.length) {
+    el.innerHTML='<div style="text-align:center;color:var(--text-xs);font-style:italic;font-size:.95rem;padding:2rem;">no classes yet — add one above to get started 📖</div>';
+    return;
+  }
+  el.innerHTML = S.classes.map(cls => {
+    const g = calcGrade(cls);
+    const gLetter = g!==null?letterGrade(g):'?';
+    const gColor = g!==null?gradeColor(g):'var(--text-xs)';
+    return `<div class="class-card">
+      <div class="class-head" onclick="toggleClass(${cls.id})">
+        <div>
+          <div class="class-name">${esc(cls.name)}</div>
+          <div class="class-meta">${cls.prof?'👤 '+esc(cls.prof):''}${cls.prof&&cls.sem?' · ':''}${cls.sem?'📅 '+esc(cls.sem):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="class-grade-badge" id="gbadge-${cls.id}" style="color:${gColor};">${gLetter}</span>
+          <button class="class-expand ${cls.open?'open':''}" id="cx-${cls.id}" aria-label="Expand">▾</button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();deleteClass(${cls.id})" style="color:var(--text-xs);">remove</button>
+        </div>
+      </div>
+
+      <div class="class-body ${cls.open?'open':''}" id="cb-${cls.id}">
+
+        <!-- Grade section -->
+        <div class="grade-section">
+          <div class="grade-row">
+            <div class="grade-big" id="gl-${cls.id}" style="color:${gColor};">${g!==null?letterGrade(g)+' ('+g.toFixed(1)+'%)':'No grades yet'}</div>
+            <div class="grade-details">
+              <div class="grade-bar-wrap"><div class="grade-bar" id="gbar-${cls.id}" style="width:${g?Math.min(100,g):0}%;background:${gColor};"></div></div>
+              <div class="grade-sub">Target: ${cls.target}% · ${g!==null?(g>=cls.target?'✓ On track':'↑ Keep going'):'Waiting for grades'}</div>
+            </div>
+          </div>
+          <div class="whatif-grid">
+            <div class="whatif-box"><div class="whatif-num" id="wi1-${cls.id}">—</div><div class="whatif-lbl">Ungraded</div></div>
+            <div class="whatif-box"><div class="whatif-num" id="wi2-${cls.id}">—</div><div class="whatif-lbl">Need on remaining</div></div>
+            <div class="whatif-box"><div class="whatif-num" id="wi3-${cls.id}">—</div><div class="whatif-lbl">Status</div></div>
+          </div>
+          <!-- Category weights -->
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <div style="font-size:.72rem;color:var(--text-xs);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">
+              Category weights — how your professor weights each type
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" id="catw-${cls.id}"></div>
+          </div>
+        </div>
+
+        <!-- Countdown strip -->
+        <div class="countdown-strip">
+          <div id="cdstrip-${cls.id}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1;"></div>
+          <div class="add-cd-row">
+            <input type="text" id="cdn-${cls.id}" placeholder="Event name..." style="width:140px;" aria-label="Countdown name" onkeydown="if(event.key==='Enter')addClassCountdown(${cls.id})">
+            <input type="date" id="cdd-${cls.id}" style="width:140px;" aria-label="Countdown date">
+            <button class="btn btn-sm btn-primary" onclick="addClassCountdown(${cls.id})">+ Date</button>
+          </div>
+        </div>
+
+        <!-- Assignments list -->
+        <div class="assignments-section">
+          <div id="asgn-list-${cls.id}"></div>
+        </div>
+
+        <!-- Add assignment form -->
+        <div class="add-asgn-form">
+          <div class="add-asgn-label">✦ Add assignment</div>
+          <div class="form-row">
+            <input type="text" id="an-${cls.id}" placeholder="Assignment name..." style="flex:2;min-width:140px;" aria-label="Assignment name" onkeydown="if(event.key==='Enter')addAssignment(${cls.id})">
+            <select id="at-${cls.id}" style="width:100px;" aria-label="Type">
+              <option value="hw">📋 HW</option>
+              <option value="exam">📝 Exam</option>
+              <option value="quiz">❓ Quiz</option>
+              <option value="project">💡 Project</option>
+              <option value="lab">🔬 Lab</option>
+              <option value="other">📌 Other</option>
+            </select>
+            <input type="date" id="ad-${cls.id}" style="width:140px;" aria-label="Due date">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:75px;">
+              <label class="field-label">Points</label>
+              <input type="number" id="aw-${cls.id}" value="100" min="1" step="1" aria-label="Points possible" style="text-align:center;" title="Points possible (e.g. 100, 50, 20)">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addAssignment(${cls.id})">Add</button>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+  }).join('');
+
+  // Populate dynamic content
+  S.classes.forEach(cls => renderClass(cls.id));
+}
+
+function renderStats() {
+  const el = document.getElementById('stats-bar'); if (!el) return;
+  const allA = S.classes.flatMap(c=>c.assignments||[]);
+  const overdue = allA.filter(a=>!a.done&&a.due&&daysUntil(a.due)<0).length;
+  const soon    = allA.filter(a=>!a.done&&a.due&&daysUntil(a.due)>=0&&daysUntil(a.due)<=3).length;
+  const done    = allA.filter(a=>a.done).length;
+  const total   = allA.length;
+  el.innerHTML = [
+    {n:S.classes.length, l:'Classes'},
+    {n:total-done,       l:'Pending'},
+    {n:soon,             l:'Due in 3 days'},
+    {n:overdue,          l:'Overdue'},
+    {n:done+'/'+total,   l:'Completed'},
+  ].map(s=>`<div class="stat-box"><div class="stat-num">${s.n}</div><div class="stat-lbl">${s.l}</div></div>`).join('');
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    const savedTheme = localStorage.getItem(THEME_SK);
+    if (savedTheme) setTheme(savedTheme);
+  } catch(e) {}
+  load(); // instant local cache so nothing crashes before cloud data arrives
+
+  whenFirebaseReady(function() {
+    window.fb.onAuthChange(async function(user) {
+      const gate = document.getElementById('login-gate');
+      const layout = document.getElementById('app-layout');
+      if (user) {
+        await syncFromCloud();
+        gate.style.display = 'none';
+        layout.style.display = '';
+        render();
+      } else {
+        gate.style.display = 'flex';
+        layout.style.display = 'none';
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
